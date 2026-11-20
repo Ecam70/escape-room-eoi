@@ -148,7 +148,7 @@
     const uw = addUV(plane(1.6, .31, uvMat(T.uvWall), scene, -X + .03, 1.42, -.9), .45); uw.rotation.y = PI / 2;
 
     /* ---------- Pantalla con Vicenta + neón ---------- */
-    const TV = R.tv = group(scene, 2.3, 1.72, -Z); reg(TV, 'tv', 'Vicenta, tu mentora (videollamada)');
+    const TV = R.tv = group(scene, 2.3, 1.72, -Z); reg(TV, 'tv', 'Vicenta, Directora del Programa (videollamada)');
     rbox(1.58, .93, .05, .012, M.black, TV, 0, 0, .03);
     plane(1.5, .844, new T3.MeshBasicMaterial({ map: T.tv, color: 0xd0d0d0 }), TV, 0, 0, .0565);
     box(.9, .05, .07, M.black, TV, 0, -.56, .05);

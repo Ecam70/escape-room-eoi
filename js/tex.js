@@ -261,7 +261,7 @@
       y += rh;
     });
     x.fillStyle = '#8a91a1'; x.font = `400 18px ${F}`; x.textAlign = 'center'; x.textBaseline = 'alphabetic';
-    x.fillText('Todas las sesiones se celebran por la tarde en esta sala · Mentora del coworking: Vicenta', W / 2, H - 26);
+    x.fillText('Todas las sesiones se celebran por la tarde en esta sala · Directora del Programa: Vicenta', W / 2, H - 26);
     return c;
   }
   function hexPath(x, cx, cy, r) { x.beginPath(); for (let i = 0; i < 6; i++) { const a = Math.PI / 3 * i + Math.PI / 6; x[i ? 'lineTo' : 'moveTo'](cx + r * Math.cos(a), cy + r * Math.sin(a)); } x.closePath(); }
@@ -420,7 +420,7 @@
     ER.drawVicenta(x, W / 2 - 290, 6, 580, Object.assign({ bg: false }, o));
     x.fillStyle = 'rgba(10,14,24,.78)'; rr(x, 30, H - 100, 400, 70, 14); x.fill();
     x.fillStyle = '#fff'; x.font = `700 32px ${F}`; x.textBaseline = 'middle'; x.textAlign = 'left'; x.fillText('Vicenta', 54, H - 76);
-    x.fillStyle = '#b8c0cf'; x.font = `400 21px ${F}`; x.fillText('Mentora · Coworking EOI', 54, H - 46);
+    x.fillStyle = '#b8c0cf'; x.font = `400 21px ${F}`; x.fillText('Directora del Programa · EOI', 54, H - 46);
     x.fillStyle = '#2fd688'; x.beginPath(); x.arc(396, H - 65, 9, 0, 7); x.fill();
     x.fillStyle = 'rgba(10,14,24,.78)'; rr(x, W - 330, 26, 300, 50, 25); x.fill();
     x.fillStyle = '#ff5a4e'; x.beginPath(); x.arc(W - 302, 51, 8, 0, 7); x.fill();

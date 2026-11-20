@@ -520,7 +520,7 @@
     sb.onclick = () => {
       audioInit(); S.started = true; S.t0 = performance.now(); $('intro').style.opacity = 0; later(900, () => $('intro').classList.add('hidden')); $('hud').classList.remove('hidden');
       yaw = ((yaw + PI) % (2 * PI)) - PI; const y0 = yaw, p0 = pitch; tw(1.6, t => { yaw = y0 * (1 - t) - .32 * t; pitch = p0 + (-.02 - p0) * t; });
-      later(1900, () => vicSay('¡Hola! Soy Vicenta, tu mentora. El sistema ha bloqueado la puerta, pero tranquilidad: todo lo que necesitas lo vimos en los talleres. Mira bien a tu alrededor y, si te atascas, haz clic en mi pantalla o en mi foto.', [['¡Vamos allá!', vicHide, 1]], true));
+      later(1900, () => vicSay('¡Hola! Soy Vicenta, la Directora del Programa. El sistema ha bloqueado la puerta, pero tranquilidad: todo lo que necesitas lo vimos en los talleres. Mira bien a tu alrededor y, si te atascas, haz clic en mi pantalla o en mi foto.', [['¡Vamos allá!', vicHide, 1]], true));
     };
   };
 })();
