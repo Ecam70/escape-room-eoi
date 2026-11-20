@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Escape Room · Coworking EOI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div id="topbar">
+    <div class="brand"><b>EOI</b><span>Coworking · Escape Room</span></div>
+    <div class="stats">
+      <div class="stat"><i>Tiempo</i><b id="timer">00:00</b></div>
+      <div class="stat"><i>Retos</i><b id="progress">0/8</b></div>
+      <div class="stat"><i>Pistas</i><b id="hintcount">0</b></div>
+    </div>
+    <div class="tools">
+      <button id="btn-help" title="Cómo se juega">?</button>
+      <button id="btn-sound" title="Sonido">♪</button>
+      <button id="btn-full" title="Pantalla completa">⛶</button>
+    </div>
+  </div>
+  <div id="caption"></div>
+  <button id="back">← Volver</button>
+  <div id="clockctrl" class="hidden">
+    <button data-d="-60">− 1 h</button><button data-d="-5">− 5 min</button>
+    <span id="clockread">3:10</span>
+    <button data-d="5">+ 5 min</button><button data-d="60">+ 1 h</button>
+  </div>
+  <div id="invwrap">
+    <div id="invinfo"></div>
+    <div id="inv"></div>
+  </div>
+  <div id="vic">
+    <div id="vicbubble" class="hidden">
+      <div class="vicname">Vicenta <span>· mentora del coworking</span></div>
+      <div id="victext"></div>
+      <div id="vicbtns"></div>
+    </div>
+    <button id="vicbtn" title="Pedir ayuda a Vicenta"><canvas id="vicavatar" width="160" height="160"></canvas><span>Pista</span></button>
+  </div>
+</div>
+<div id="tooltip"></div>
+<div id="uvvig"></div>
+
+<!-- Overlay genérico -->
+<div id="overlay" class="hidden"><div id="ovbox"></div><button id="ovclose">✕</button></div>
+
+<!-- Intro -->
+<div id="intro">
+  <div class="introcard">
+    <div class="kicker">EOI · Escuela de Organización Industrial</div>
+    <h1>La víspera del <em>Demo Day</em></h1>
+    <h2>Escape Room · Sala de coworking</h2>
+    <p>Son las <b>22:47</b>. Mañana presentas tu proyecto en el Demo Day del Coworking EOI Madrid. Te has quedado
+    repasando el pitch y el sistema de seguridad ha bloqueado la sala contigo dentro.</p>
+    <p>Todo lo que necesitas para salir lo aprendiste en los talleres. Y no estás solo: <b>Vicenta</b>, la mentora del
+    coworking, se ha conectado por videollamada para echarte una mano.</p>
+    <ul>
+      <li><b>Arrastra</b> con el ratón para mirar a tu alrededor.</li>
+      <li><b>Haz clic</b> en los objetos para acercarte, examinarlos y usarlos.</li>
+      <li>Selecciona objetos del <b>inventario</b> para utilizarlos en la sala.</li>
+    </ul>
+    <div id="access">
+      <label for="accesskey">Clave de acceso</label>
+      <input id="accesskey" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Escribe la clave que te han dado">
+      <div id="accessmsg"></div>
+    </div>
+    <button id="start" disabled>Cargando la sala…</button>
+    <div class="small">Dificultad media-alta · 30–45 min · Se juega solo con el ratón</div>
+  </div>
+</div>
+
+<!-- Final -->
+<div id="end" class="hidden">
+  <div class="introcard">
+    <div class="kicker">¡Has salido!</div>
+    <h1>Listo para el <em>Demo Day</em></h1>
+    <div class="endstats">
+      <div><i>Tiempo</i><b id="endtime">--:--</b></div>
+      <div><i>Pistas usadas</i><b id="endhints">0</b></div>
+      <div><i>Valoración</i><b id="endrank">★★★</b></div>
+    </div>
+    <div class="endvic"><canvas id="endavatar" width="160" height="160"></canvas>
+      <p id="endmsg"></p></div>
+    <button id="again">Jugar de nuevo</button>
+  </div>
+</div>
+<div id="fade"></div>
+
+<script src="js/config.js"></script>
+<script src="js/access.js"></script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+window.THREE = THREE;
+window.ADDONS = { RoomEnvironment, RoundedBoxGeometry, EffectComposer, RenderPass, UnrealBloomPass, OutlinePass, OutputPass };
+const load = src => new Promise((ok, ko) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ko; document.body.appendChild(s); });
+for (const s of ['js/tex.js', 'js/world.js', 'js/game.js']) await load(s);
+window.ER.boot();
+</script>
+</body>
+</html>
