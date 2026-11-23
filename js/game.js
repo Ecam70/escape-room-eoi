@@ -3,6 +3,7 @@
   const ER = window.ER, $ = id => document.getElementById(id), PI = Math.PI;
   let renderer, scene, camera, composer, outline, R, uvSpot, envBase = .4;
   const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(0, 0), HOME = new THREE.Vector3(0, 1.62, 1.35);
+  const LIMIT = 35 * 60, LBKEY = 'er_leaderboard_v1', keys = {};
   const S = ER.S = {
     started: false, over: false, t0: 0, hints: 0, zone: 'home', inv: [], sel: null, uv: false, uvK: 0,
     clock: 190, solved: {}, stack: [], colors: [5, 3, 0, 2], dials: [0, 0, 0], placed: {}, flags: {}, hintLvl: {}, cardIn: false, coffee: 0
@@ -420,10 +421,13 @@
     cv.addEventListener('contextmenu', e => { e.preventDefault(); exitZone(); });
     cv.addEventListener('wheel', e => { if (S.zone !== 'home' || camBusy) return; camera.fov = THREE.MathUtils.clamp(camera.fov + e.deltaY * .03, 32, 60); camera.updateProjectionMatrix(); }, { passive: true });
     addEventListener('keydown', e => {
+      if (MOVE.includes(e.code) && !ov && S.started && !S.over && e.target.tagName !== 'INPUT') { keys[e.code] = true; e.preventDefault(); return; }
       if (e.key === 'Escape') { if (ov) closeOv(); else exitZone(); return; }
       if (ov === 'laptop' && !S.solved.laptop) { const k = e.key.toUpperCase(); if (/^[A-ZÑ]$/.test(k)) ltKey(k); else if (e.key === 'Backspace') ltKey('⌫'); }
       if (ov === 'keypad') { if (/^[0-9]$/.test(e.key)) kpKey(e.key); else if (e.key === 'Enter') kpKey('✓'); else if (e.key === 'Backspace') kpKey('C'); }
     });
+    addEventListener('keyup', e => { delete keys[e.code]; });
+    addEventListener('blur', () => { for (const k in keys) delete keys[k]; });
     $('back').onclick = exitZone;
     $('overlay').addEventListener('pointerdown', e => { if (e.target === $('overlay') || e.target === $('ovclose') || (ov === 'doc')) closeOv(); });
     $('vicbtn').onclick = vicMenu;
@@ -431,7 +435,8 @@
     $('btn-sound').onclick = () => { muted = !muted; if (master) master.gain.value = muted ? 0 : .5; $('btn-sound').classList.toggle('off', muted); };
     $('btn-full').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => { }); };
     $('btn-help').onclick = () => openOv('help', el(`<div class="help"><h3>Cómo se juega</h3><ul>
-      <li><b>Arrastra</b> para mirar la sala. La <b>rueda</b> acerca la vista.</li><li><b>Clic</b> en un objeto resaltado para acercarte o usarlo. <b>Volver</b> (o clic derecho) te devuelve al centro.</li>
+      <li><b>Arrastra</b> para mirar la sala. La <b>rueda</b> acerca la vista.</li><li>Con las <b>flechas</b> (o W, A, S, D) caminas por la sala: ↑ y ↓ avanzan y retroceden, ← y → giran.</li><li><b>Clic</b> en un objeto resaltado para acercarte o usarlo. <b>Volver</b> (o clic derecho) te devuelve a donde estabas.</li>
+      <li>Tienes <b>35 minutos</b> para salir: el contador de arriba marca lo que te queda.</li>
       <li>Los objetos que recoges van al <b>inventario</b>. Los pósits se seleccionan y se pegan; las notas se leen con un clic; la linterna se enciende y se apaga.</li>
       <li><b>Vicenta</b> (abajo a la derecha, o en la pantalla de la pared) da pistas en tres niveles: orientación, empujón y solución.</li></ul></div>`));
     $('again').onclick = () => location.reload();
@@ -445,7 +450,8 @@
   /* ---------- final ---------- */
   function win() {
     S.over = true; solve('door'); closeOv(); vicHide(); hover(null); sfx.win();
-    const secs = Math.floor((performance.now() - S.t0) / 1000);
+    const secs = Math.min(LIMIT, Math.floor((performance.now() - S.t0) / 1000));
+    const mine = lbAdd(S.name, secs);
     if (S.uv) toggleUV();
     R.corridor.visible = true;
     tw(2.6, t => { R.doorPivot.rotation.y = 1.4 * t; R.corrLight.intensity = 90 * t; });
@@ -456,7 +462,67 @@
       const stars = S.hints <= 1 && secs < 1800 ? 3 : S.hints <= 5 && secs < 3000 ? 2 : 1; $('endrank').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
       ER.drawVicenta($('endavatar').getContext('2d'), 0, 0, 160, {});
       $('endmsg').textContent = '«' + ['Has salido, que no es poco. Mañana, en el Demo Day, confía en lo que has aprendido: sabes más de lo que crees.', 'Muy bien resuelto. Gestionas el tiempo, ordenas las ideas y haces números: tu proyecto está en buenas manos.', '¡Impecable! Ni Mabel habría gestionado mejor el tiempo. Mañana el Demo Day es tuyo.'][stars - 1] + '» — Vicenta';
+      lbRender(mine);
     });
+  }
+  function timeout() {
+    S.over = true; closeOv(); vicHide(); hover(null); sfx.err(); if (S.uv) toggleUV();
+    const mine = lbAdd(S.name, null);
+    later(700, () => {
+      $('hud').classList.add('hidden'); $('end').classList.remove('hidden');
+      $('endkicker').textContent = 'Se acabó el tiempo'; $('endtitle').innerHTML = 'La sala sigue <em>cerrada</em>';
+      $('endtime').textContent = fmt(LIMIT); $('endhints').textContent = S.hints; $('endrank').textContent = '☆☆☆';
+      ER.drawVicenta($('endavatar').getContext('2d'), 0, 0, 160, {});
+      $('endmsg').textContent = '«Han pasado los 35 minutos y la puerta no se ha abierto. No pasa nada: ya conoces la sala. Vuelve a intentarlo: seguro que la próxima vez sales a tiempo.» — Vicenta';
+      lbRender(mine);
+    });
+  }
+
+  /* ---------- clasificación (compartida vía Supabase si está configurada en config.js; si no, la de este navegador) ---------- */
+  const LB = window.ER_LEADERBOARD || {}, lbRemote = !!(LB.url && LB.key), lbUrl = String(LB.url || '').replace(/\/+$/, '') + '/rest/v1/scores';
+  const lbHead = { apikey: LB.key, Authorization: 'Bearer ' + LB.key, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
+  const lbValid = a => Array.isArray(a) ? a.filter(e => e && typeof e.name === 'string' && (e.secs === null || Number.isFinite(e.secs))) : [];   // secs null = no superado
+  const uuid = () => crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+  function lbLoad() { try { return lbValid(JSON.parse(localStorage.getItem(LBKEY))); } catch (e) { return []; } }
+  const lbFetch = (opts) => fetch(lbUrl + (opts ? '' : '?select=id,name,secs&order=secs.asc&limit=5000'), Object.assign({ headers: lbHead, cache: 'no-store' }, opts)).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r; });
+  // guarda el resultado en este navegador y, si hay clasificación compartida, también en ella
+  function lbAdd(name, secs) {
+    const row = { id: uuid(), name, secs }, a = lbLoad(); a.push(row);
+    try { localStorage.setItem(LBKEY, JSON.stringify(a)); } catch (e) { }
+    const sent = lbRemote ? lbFetch({ method: 'POST', body: JSON.stringify(row) }).catch(e => { console.warn('Clasificación: no se pudo enviar el tiempo', e); }) : Promise.resolve();
+    return { id: row.id, sent };
+  }
+  async function lbRender(mine) {
+    const body = $('lbbody'), note = $('lbnote'), msg = t => body.innerHTML = '<tr><td colspan="3" class="empty">' + t + '</td></tr>';
+    let rows = null; note.textContent = '';
+    if (lbRemote) {
+      msg('Cargando la clasificación…');
+      try { if (mine) await mine.sent; rows = lbValid(await (await lbFetch()).json()); if (mine && !rows.some(r => r.id === mine.id)) throw new Error('sin fila propia'); }
+      catch (e) { console.warn('Clasificación: no se pudo cargar', e); rows = null; note.textContent = 'No se ha podido conectar con la clasificación común. Se muestran solo las partidas de este navegador.'; }
+    }
+    const T = r => r.secs === null ? LIMIT + 1 : r.secs;   // los no superados van al final
+    rows = (rows || lbLoad()).sort((a, b) => T(a) - T(b) || a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })); body.innerHTML = '';
+    if (!rows.length) return msg('Todavía no ha jugado nadie.');
+    let pos = 0, me = null;
+    rows.forEach((r, i) => {
+      if (!i || T(r) !== T(rows[i - 1])) pos = i + 1;   // mismo tiempo = misma posición
+      const tr = document.createElement('tr'); [r.secs === null ? '–' : pos + '.º', r.name, r.secs === null ? 'No superado' : fmt(r.secs)].forEach(v => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+      if (mine && r.id === mine.id) { tr.className = 'me'; me = tr; } body.appendChild(tr);
+    });
+    if (me) me.scrollIntoView({ block: 'center' });
+  }
+
+  /* ---------- caminar por la sala ---------- */
+  const MOVE = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'];
+  // muebles que no se pueden atravesar: [x0, x1, z0, z1], ya con el margen del jugador
+  const BLOCKS = [[-2, 2, -1.9, .1], [-5.5, -4.7, -3.95, -1.75], [-5.5, -4.6, 0, 2.7], [-5.35, -2.45, 3.2, 4.5], [4.8, 5.5, 1.2, 3.8], [4.7, 5.5, -2.95, -.25], [4.1, 5.5, -4.5, -3.1]];
+  const free = (x, z) => Math.abs(x) <= 5.1 && Math.abs(z) <= 4.1 && !BLOCKS.some(b => x > b[0] && x < b[1] && z > b[2] && z < b[3]);
+  function walk(dt) {
+    const f = (keys.ArrowUp || keys.KeyW ? 1 : 0) - (keys.ArrowDown || keys.KeyS ? 1 : 0), s = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0), r = (keys.ArrowLeft ? 1 : 0) - (keys.ArrowRight ? 1 : 0);
+    if (!f && !s && !r) return; yaw += r * 1.7 * dt; mouseMoved = true;
+    if (!f && !s) return;
+    const sn = Math.sin(yaw), cs = Math.cos(yaw), k = 2.3 * dt / Math.hypot(f, s), dx = (-sn * f + cs * s) * k, dz = (-cs * f - sn * s) * k;
+    if (free(HOME.x + dx, HOME.z)) HOME.x += dx; if (free(HOME.x, HOME.z + dz)) HOME.z += dz;
   }
   const fmt = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
 
@@ -468,7 +534,7 @@
     const dt = Math.min(clock.getDelta(), .05), now = performance.now();
     for (let i = tweens.length - 1; i >= 0; i--) { const w = tweens[i]; w.t += dt; const k = Math.min(1, w.t / w.dur); w.fn(w.ease(k)); if (k >= 1) { tweens.splice(i, 1); if (w.done) w.done(); } }
     if (!camBusy) {
-      if (S.zone === 'home') { if (!S.started) yaw += dt * .06; camera.position.copy(HOME); camera.rotation.set(pitch, yaw, 0, 'YXZ'); }
+      if (S.zone === 'home') { if (!S.started) yaw += dt * .06; else if (!ov && !S.over) walk(dt); camera.position.copy(HOME); camera.rotation.set(pitch, yaw, 0, 'YXZ'); }
       else if (zoneCamCur) {
         par.x += (mouse.x - par.x) * .06; par.y += (mouse.y - par.y) * .06;
         const d = zoneCamCur.pos.distanceTo(zoneCamCur.look) * .05; tmpD.copy(zoneCamCur.look).sub(zoneCamCur.pos).normalize(); tmpR.crossVectors(tmpD, camera.up).normalize();
@@ -489,7 +555,15 @@
     const t = now / 1000; let st = now < talkUntil ? (Math.floor(now / 160) % 2 ? 'talk' : '') : '';
     if (t > blinkAt) { st += 'blink'; if (t > blinkAt + .14) blinkAt = t + 2.5 + Math.random() * 3; }
     if (st !== tvState) { tvState = st; ER.drawTV({ blink: st.includes('blink'), talk: st.includes('talk') }); }
-    if (S.started && !S.over) { const s = Math.floor((now - S.t0) / 1000); if (s !== lastSec) { lastSec = s; $('timer').textContent = fmt(s); } }
+    if (S.started && !S.over) {
+      const s = Math.floor((now - S.t0) / 1000), left = Math.max(0, LIMIT - s);
+      if (s !== lastSec) {
+        lastSec = s; $('timer').textContent = fmt(left); $('timerbox').classList.toggle('low', left <= 300);
+        if (left <= 300 && left > 60 && !S.flags.warn5) { S.flags.warn5 = 1; vicSay('Quedan cinco minutos. Si estás atascado, pídeme una pista: ahora no es momento de orgullos.'); }
+        if (left <= 60 && left > 0 && !S.flags.warn1) { S.flags.warn1 = 1; vicSay('¡Último minuto! Tarjeta, código y a la puerta.'); }
+        if (!left) timeout();
+      }
+    }
     composer.render();
   }
 
@@ -514,11 +588,18 @@
     composer.addPass(new ADDONS.OutputPass());
     setClock(); paintBtns(); renderInv(); bindInput();
     ER.drawVicenta($('vicavatar').getContext('2d'), 0, 0, 160, {});
-    ER.dbg = { scene, camera, renderer, act, enterZone, exitZone, give, S, look: (y, p) => { yaw = y; pitch = p; }, flush: () => { let n = 0; while (tweens.length && n++ < 50) { const w = tweens.shift(); w.fn(1); if (w.done) w.done(); } } };
+    ER.dbg = { scene, camera, renderer, act, win, HOME, enterZone, exitZone, give, S, look: (y, p) => { yaw = y; pitch = p; }, flush: () => { let n = 0; while (tweens.length && n++ < 50) { const w = tweens.shift(); w.fn(1); if (w.done) w.done(); } } };
     frame();
     const sb = $('start'); sb.disabled = false; sb.textContent = 'Entrar en la sala';
+    const pn = $('playername'), pbox = $('player');
+    try { pn.value = localStorage.getItem('er_player') || ''; } catch (e) { }
+    pn.addEventListener('input', () => { $('playermsg').textContent = ''; pbox.classList.remove('err'); });
+    pn.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') sb.click(); });
     sb.onclick = () => {
-      audioInit(); S.started = true; S.t0 = performance.now(); $('intro').style.opacity = 0; later(900, () => $('intro').classList.add('hidden')); $('hud').classList.remove('hidden');
+      const name = pn.value.replace(/\s+/g, ' ').trim();
+      if (!name) { $('playermsg').textContent = 'Escribe tu nombre o nick para entrar.'; pbox.classList.remove('err'); void pbox.offsetWidth; pbox.classList.add('err'); pn.focus(); return; }
+      S.name = name; try { localStorage.setItem('er_player', name); } catch (e) { }
+      pn.blur(); audioInit(); S.started = true; S.t0 = performance.now(); $('intro').style.opacity = 0; later(900, () => $('intro').classList.add('hidden')); $('hud').classList.remove('hidden');
       yaw = ((yaw + PI) % (2 * PI)) - PI; const y0 = yaw, p0 = pitch; tw(1.6, t => { yaw = y0 * (1 - t) - .32 * t; pitch = p0 + (-.02 - p0) * t; });
       later(1900, () => vicSay('¡Hola! Soy Vicenta, la Directora del Programa. El sistema ha bloqueado la puerta, pero tranquilidad: todo lo que necesitas lo vimos en los talleres. Mira bien a tu alrededor y, si te atascas, haz clic en mi pantalla o en mi foto.', [['¡Vamos allá!', vicHide, 1]], true));
     };

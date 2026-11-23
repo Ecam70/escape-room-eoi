@@ -23,7 +23,7 @@
   <div id="topbar">
     <div class="brand"><b>EOI</b><span>Coworking · Escape Room</span></div>
     <div class="stats">
-      <div class="stat"><i>Tiempo</i><b id="timer">00:00</b></div>
+      <div class="stat" id="timerbox"><i>Restante</i><b id="timer">35:00</b></div>
       <div class="stat"><i>Retos</i><b id="progress">0/8</b></div>
       <div class="stat"><i>Pistas</i><b id="hintcount">0</b></div>
     </div>
@@ -70,25 +70,31 @@
     <p>Todo lo que necesitas para salir lo aprendiste en los talleres. Y no estás solo: <b>Vicenta</b>, la Directora del
     Programa, se ha conectado por videollamada para echarte una mano.</p>
     <ul>
-      <li><b>Arrastra</b> con el ratón para mirar a tu alrededor.</li>
+      <li><b>Arrastra</b> con el ratón para mirar a tu alrededor y usa las <b>flechas</b> del teclado para caminar por la sala.</li>
       <li><b>Haz clic</b> en los objetos para acercarte, examinarlos y usarlos.</li>
       <li>Selecciona objetos del <b>inventario</b> para utilizarlos en la sala.</li>
+      <li>Tienes <b>35 minutos</b>. Tu tiempo entrará en la clasificación.</li>
     </ul>
+    <div id="player">
+      <label for="playername">Tu nombre o nick</label>
+      <input id="playername" type="text" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Así aparecerás en la clasificación">
+      <div id="playermsg"></div>
+    </div>
     <div id="access">
       <label for="accesskey">Clave de acceso</label>
       <input id="accesskey" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Escribe la clave que te han dado">
       <div id="accessmsg"></div>
     </div>
     <button id="start" disabled>Cargando la sala…</button>
-    <div class="small">Dificultad media-alta · 30–45 min · Se juega solo con el ratón</div>
+    <div class="small">Dificultad media-alta · Tiempo máximo: 35 min · Ratón y flechas del teclado</div>
   </div>
 </div>
 
 <!-- Final -->
 <div id="end" class="hidden">
   <div class="introcard">
-    <div class="kicker">¡Has salido!</div>
-    <h1>Listo para el <em>Demo Day</em></h1>
+    <div class="kicker" id="endkicker">¡Has salido!</div>
+    <h1 id="endtitle">Listo para el <em>Demo Day</em></h1>
     <div class="endstats">
       <div><i>Tiempo</i><b id="endtime">--:--</b></div>
       <div><i>Pistas usadas</i><b id="endhints">0</b></div>
@@ -96,6 +102,11 @@
     </div>
     <div class="endvic"><canvas id="endavatar" width="160" height="160"></canvas>
       <p id="endmsg"></p></div>
+    <div id="lb">
+      <h3>Clasificación</h3>
+      <div id="lbwrap"><table><thead><tr><th>#</th><th>Jugador</th><th>Tiempo</th></tr></thead><tbody id="lbbody"></tbody></table></div>
+      <div id="lbnote"></div>
+    </div>
     <button id="again">Jugar de nuevo</button>
   </div>
 </div>
