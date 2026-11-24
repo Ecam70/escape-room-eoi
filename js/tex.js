@@ -406,10 +406,17 @@
   ER.labelCanvas = labelCanvas;
   function vinyl() {
     const c = mk(1024, 512), x = c.getContext('2d');
-    x.fillStyle = '#ff5a4e'; x.font = `800 250px ${F}`; x.textBaseline = 'alphabetic'; x.fillText('EOI', 30, 250);
+    // logotipo de EOI: símbolo de bloques + nombre en tres líneas
+    const u = 188, X0 = 40, Y0 = 36, r = (a, b, w, h) => x.fillRect(X0 + a * u, Y0 + b * u, w * u, h * u);
+    x.fillStyle = '#3fb27f'; x.textBaseline = 'alphabetic';
+    r(0, 0, 1, .25); r(0, .375, .72, .25); r(0, .75, 1, .25);                                   // E
+    r(1.14, 0, 1, .25); r(1.14, .75, 1, .25); r(1.14, 0, .25, 1); r(1.89, 0, .25, 1);           // O
+    r(2.29, 0, .245, 1);                                                                        // I
+    let fs = .34 * u; x.font = `700 ${fs}px Helvetica, Arial, sans-serif`; fs *= 2.12 * u / x.measureText('Organización').width;
+    x.font = `700 ${fs}px Helvetica, Arial, sans-serif`;
+    ['Escuela de', 'Organización', 'Industrial'].forEach((t, i) => x.fillText(t, X0 + 2.8 * u, Y0 + (.26 + i * .365) * u));
     x.fillStyle = '#1b2130'; x.font = `600 58px ${F}`; x.fillText('Coworking Madrid', 40, 340);
-    x.fillStyle = '#5c6578'; x.font = `400 38px ${F}`; x.fillText('Escuela de Organización Industrial', 40, 400);
-    x.fillStyle = '#19a596'; x.font = `700 62px ${HW}`; x.fillText('ideas que se convierten en empresas', 40, 480);
+    x.fillStyle = '#19a596'; x.font = `700 62px ${HW}`; x.fillText('ideas que se convierten en empresas', 40, 440);
     return c;
   }
   ER.drawTV = function (o) {
