@@ -53,6 +53,12 @@
     clearTimeout(vicT); if (!sticky) vicT = setTimeout(vicHide, Math.max(7000, text.length * 85));
   }
   function vicHide() { $('vicbubble').classList.add('hidden'); clearTimeout(vicT); }
+  function vicBye() { vicHide(); if (S.zone === 'tv') exitZone(); }
+  // la burbuja de Vicenta solo aparece dentro de un reto; fuera, hay que ir a su pantalla
+  function vicSync() {
+    const tv = S.zone === 'tv', inCh = S.started && !S.over && !tv && (ov ? ov === 'laptop' || ov === 'keypad' : S.zone !== 'home');
+    $('vic').classList.toggle('tv', tv); $('vicbtn').classList.toggle('hidden', !inCh); if (!inCh && !tv) vicHide();
+  }
 
   /* ---------- pistas ---------- */
   const HINTS = {
@@ -91,15 +97,15 @@
     return null;
   }
   function vicMenu() {
-    if (!S.started || S.over) return; sfx.click();
-    vicSay('¿Te has atascado? Te oriento sin destriparte la solución… salvo que me la pidas.', [['Dame una pista', giveHint, 1], ['Ahora no', vicHide]], true);
+    if (!S.started || S.over) return;
+    vicSay('¿Te has atascado? Te oriento sin destriparte la solución… salvo que me la pidas.', [['Dame una pista', giveHint, 1], ['Ahora no', vicBye]], true);
   }
   function giveHint() {
     let t = topic() || nextTopic(); const p = prereq(t);
     S.hints++; $('hintcount').textContent = S.hints;
-    if (p) return vicSay(p, [['Gracias', vicHide, 1]], true);
+    if (p) return vicSay(p, [['Gracias', vicBye, 1]], true);
     const lvl = Math.min(S.hintLvl[t] || 0, 2); S.hintLvl[t] = lvl + 1;
-    const b = [['Gracias', vicHide, 1]]; if (lvl < 2) b.unshift([lvl === 1 ? 'Dime la solución' : 'Otra pista más', giveHint]);
+    const b = [['Gracias', vicBye, 1]]; if (lvl < 2) b.unshift([lvl === 1 ? 'Dime la solución' : 'Otra pista más', giveHint]);
     vicSay(HINTS[t][lvl], b, true);
   }
 
@@ -147,8 +153,8 @@
   }
 
   /* ---------- overlays ---------- */
-  function openOv(kind, node, onClose) { ov = kind; const b = $('ovbox'); b.innerHTML = ''; b.appendChild(node); $('overlay').classList.remove('hidden'); $('overlay')._close = onClose; hover(null); }
-  function closeOv() { if (!ov) return; const c = $('overlay')._close; ov = null; $('overlay').classList.add('hidden'); $('ovbox').innerHTML = ''; if (c) c(); }
+  function openOv(kind, node, onClose) { ov = kind; const b = $('ovbox'); b.innerHTML = ''; b.appendChild(node); $('overlay').classList.remove('hidden'); $('overlay')._close = onClose; hover(null); vicSync(); }
+  function closeOv() { if (!ov) return; const c = $('overlay')._close; ov = null; $('overlay').classList.add('hidden'); $('ovbox').innerHTML = ''; if (c) c(); vicSync(); }
   function showDoc(id) {
     const d = ER.docs[id], w = document.createElement('div'); w.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px';
     d.c.className = 'doc'; w.appendChild(d.c); const cap = document.createElement('div'); cap.className = 'doccap'; cap.textContent = d.cap + ' · clic fuera para cerrar'; w.appendChild(cap);
@@ -325,7 +331,7 @@
   function act(it) {
     const id = it.id, p = id.split(':');
     switch (p[0]) {
-      case 'tv': return vicMenu();
+      case 'tv': return enterZone('tv');
       case 'board': case 'lockers': case 'clock': case 'door': case 'shelf': case 'lego': return enterZone(id);
       case 'sideboard': return enterZone('drawer');
       case 'window': return say('Madrid de noche. Las cuatro torres al fondo… y tú aquí, encerrado con tu pitch.');
@@ -371,10 +377,11 @@
     tw(.95, t => { camera.position.lerpVectors(p0, pos, t); camera.quaternion.slerpQuaternions(q0, q1, t); camera.fov = f0 + (55 - f0) * t; camera.updateProjectionMatrix(); }, () => { camBusy = false; mouseMoved = true; if (done) done(); });
   }
   function enterZone(z) {
-    if (camBusy) return; sfx.click(); S.zone = z; zoneCamCur = null; const c = zoneCam(z); par.set(0, 0);
+    if (camBusy) return; sfx.click(); S.zone = z; zoneCamCur = null; const c = zoneCam(z); par.set(0, 0); vicHide(); vicSync();
     $('back').classList.add('on'); $('clockctrl').classList.toggle('hidden', !(z === 'clock' && !S.solved.clock));
     flyTo(c.pos, c.look, null, () => {
       zoneCamCur = c;
+      if (z === 'tv' && S.zone === 'tv') { if (S.flags.hello) vicMenu(); else { S.flags.hello = 1; vicSay('¡Hola! Soy Vicenta, la Directora del Programa. El sistema ha bloqueado la puerta, pero tranquilidad: todo lo que necesitas lo vimos en los talleres. Mira bien a tu alrededor y, si te atascas, vuelve a esta pantalla y pídeme una pista.', [['¡Vamos allá!', vicBye, 1]], true); } }
       if (z === 'lego' && has('brick')) { drop('brick'); R.bricks.blue.g.visible = true; sfx.pick(); say('Dejas la pieza azul sobre la mesa, con las demás.'); }
       if (z === 'board' && S.solved.canvas && S.uv) S.flags.codeSeen = 1;
     });
@@ -382,9 +389,10 @@
   function exitZone() {
     if (camBusy || S.zone === 'home') return; const Zd = ER.zones[S.zone];
     if (Zd.parent) return enterZone(Zd.parent);
+    vicHide();
     const look = zoneCamCur ? zoneCamCur.look : new THREE.Vector3(0, 1.4, -4); sfx.click();
     const d = look.clone().sub(HOME); yaw = Math.atan2(-d.x, -d.z); pitch = THREE.MathUtils.clamp(Math.atan2(d.y, Math.hypot(d.x, d.z)), -.45, .35);
-    S.zone = 'home'; zoneCamCur = null; $('back').classList.remove('on'); $('clockctrl').classList.add('hidden');
+    S.zone = 'home'; vicSync(); zoneCamCur = null; $('back').classList.remove('on'); $('clockctrl').classList.add('hidden');
     flyTo(HOME, null, new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ')));
   }
 
@@ -429,8 +437,8 @@
     addEventListener('keyup', e => { delete keys[e.code]; });
     addEventListener('blur', () => { for (const k in keys) delete keys[k]; });
     $('back').onclick = exitZone;
+    $('vicbtn').onclick = () => { sfx.click(); vicMenu(); };
     $('overlay').addEventListener('pointerdown', e => { if (e.target === $('overlay') || e.target === $('ovclose') || (ov === 'doc')) closeOv(); });
-    $('vicbtn').onclick = vicMenu;
     document.querySelectorAll('#clockctrl button').forEach(b => b.onclick = () => clockStep(+b.dataset.d));
     $('btn-sound').onclick = () => { muted = !muted; if (master) master.gain.value = muted ? 0 : .5; $('btn-sound').classList.toggle('off', muted); };
     $('btn-full').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => { }); };
@@ -438,7 +446,7 @@
       <li><b>Arrastra</b> para mirar la sala. La <b>rueda</b> acerca la vista.</li><li>Con las <b>flechas</b> (o W, A, S, D) caminas por la sala: ↑ y ↓ avanzan y retroceden, ← y → giran.</li><li><b>Clic</b> en un objeto resaltado para acercarte o usarlo. <b>Volver</b> (o clic derecho) te devuelve a donde estabas.</li>
       <li>Tienes <b>35 minutos</b> para salir: el contador de arriba marca lo que te queda.</li>
       <li>Los objetos que recoges van al <b>inventario</b>. Los pósits se seleccionan y se pegan; las notas se leen con un clic; la linterna se enciende y se apaga.</li>
-      <li><b>Vicenta</b> (abajo a la derecha, o en la pantalla de la pared) da pistas en tres niveles: orientación, empujón y solución.</li></ul></div>`));
+      <li><b>Vicenta</b> está en la pantalla de la pared: haz clic en ella para hablar y pedirle pistas en tres niveles: orientación, empujón y solución. Dentro de un reto aparece también abajo a la derecha, para preguntarle por ese reto.</li></ul></div>`));
     $('again').onclick = () => location.reload();
     addEventListener('resize', resize);
   }
@@ -449,7 +457,7 @@
 
   /* ---------- final ---------- */
   function win() {
-    S.over = true; solve('door'); closeOv(); vicHide(); hover(null); sfx.win();
+    S.over = true; solve('door'); closeOv(); vicSync(); vicHide(); hover(null); sfx.win();
     const secs = Math.min(LIMIT, Math.floor((performance.now() - S.t0) / 1000));
     const mine = lbAdd(S.name, secs);
     if (S.uv) toggleUV();
@@ -466,7 +474,7 @@
     });
   }
   function timeout() {
-    S.over = true; closeOv(); vicHide(); hover(null); sfx.err(); if (S.uv) toggleUV();
+    S.over = true; closeOv(); vicSync(); vicHide(); hover(null); sfx.err(); if (S.uv) toggleUV();
     const mine = lbAdd(S.name, null);
     later(700, () => {
       $('hud').classList.add('hidden'); $('end').classList.remove('hidden');
@@ -559,8 +567,8 @@
       const s = Math.floor((now - S.t0) / 1000), left = Math.max(0, LIMIT - s);
       if (s !== lastSec) {
         lastSec = s; $('timer').textContent = fmt(left); $('timerbox').classList.toggle('low', left <= 300);
-        if (left <= 300 && left > 60 && !S.flags.warn5) { S.flags.warn5 = 1; vicSay('Quedan cinco minutos. Si estás atascado, pídeme una pista: ahora no es momento de orgullos.'); }
-        if (left <= 60 && left > 0 && !S.flags.warn1) { S.flags.warn1 = 1; vicSay('¡Último minuto! Tarjeta, código y a la puerta.'); }
+        if (left <= 300 && left > 60 && !S.flags.warn5) { S.flags.warn5 = 1; say('Vicenta, desde la pantalla: «Quedan cinco minutos. Si estás atascado, ven y pídeme una pista: ahora no es momento de orgullos.»'); }
+        if (left <= 60 && left > 0 && !S.flags.warn1) { S.flags.warn1 = 1; say('Vicenta, desde la pantalla: «¡Último minuto! Tarjeta, código y a la puerta.»'); }
         if (!left) timeout();
       }
     }
@@ -600,8 +608,7 @@
       if (!name) { $('playermsg').textContent = 'Escribe tu nombre o nick para entrar.'; pbox.classList.remove('err'); void pbox.offsetWidth; pbox.classList.add('err'); pn.focus(); return; }
       S.name = name; try { localStorage.setItem('er_player', name); } catch (e) { }
       pn.blur(); audioInit(); S.started = true; S.t0 = performance.now(); $('intro').style.opacity = 0; later(900, () => $('intro').classList.add('hidden')); $('hud').classList.remove('hidden');
-      yaw = ((yaw + PI) % (2 * PI)) - PI; const y0 = yaw, p0 = pitch; tw(1.6, t => { yaw = y0 * (1 - t) - .32 * t; pitch = p0 + (-.02 - p0) * t; });
-      later(1900, () => vicSay('¡Hola! Soy Vicenta, la Directora del Programa. El sistema ha bloqueado la puerta, pero tranquilidad: todo lo que necesitas lo vimos en los talleres. Mira bien a tu alrededor y, si te atascas, haz clic en mi pantalla o en mi foto.', [['¡Vamos allá!', vicHide, 1]], true));
+      later(1000, () => enterZone('tv'));
     };
   };
 })();

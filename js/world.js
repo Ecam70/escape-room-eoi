@@ -148,7 +148,7 @@
     const uw = addUV(plane(1.6, .31, uvMat(T.uvWall), scene, -X + .03, 1.42, -.9), .45); uw.rotation.y = PI / 2;
 
     /* ---------- Pantalla con Vicenta + neón ---------- */
-    const TV = R.tv = group(scene, 2.3, 1.72, -Z); reg(TV, 'tv', 'Vicenta, Directora del Programa (videollamada)');
+    const TV = R.tv = group(scene, 2.3, 1.72, -Z); reg(TV, 'tv', 'Hablar con Vicenta · pedir una pista');
     rbox(1.58, .93, .05, .012, M.black, TV, 0, 0, .03);
     plane(1.5, .844, new T3.MeshBasicMaterial({ map: T.tv, color: 0xd0d0d0 }), TV, 0, 0, .0565);
     box(.9, .05, .07, M.black, TV, 0, -.56, .05);
@@ -321,7 +321,8 @@
       door: { c: V(2.45, 1.22, Z), n: V(0, 0, -1), w: 1.8, h: 2.5 },
       shelf: { c: zl(S, 0, 1.42, .35), n: V(-1, 0, 0), w: 2.0, h: 1.55 },
       drawer: { pos: zl(SB, 0, 1.75, 1.2), look: zl(SB, 0, .56, .56) },
-      lego: { pos: V(.72, 1.58, .12), look: V(.72, .8, -.86) }
+      lego: { pos: V(.72, 1.58, .12), look: V(.72, .8, -.86) },
+      tv: { c: V(2.3, 1.4, -Z + .06), n: V(0, 0, 1), w: 1.9, h: 1.6 }
     };
   };
 })();

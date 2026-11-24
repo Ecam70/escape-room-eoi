@@ -58,19 +58,21 @@ button{font-family:inherit;color:inherit;cursor:pointer}
   text-align:center;padding:3px;transform:rotate(-3deg);box-shadow:0 2px 5px rgba(0,0,0,.4)}
 @keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1)}}
 
-#vic{position:fixed;right:18px;bottom:18px;display:flex;align-items:flex-end;gap:12px;pointer-events:none}
+#vic{position:fixed;right:18px;bottom:18px;display:flex;align-items:flex-end;gap:12px;pointer-events:none;z-index:22}
 #vicbtn{pointer-events:auto;width:86px;height:86px;border-radius:50%;padding:0;border:3px solid #dfe3e8;background:#cfd6dd;position:relative;
-  box-shadow:0 8px 26px rgba(0,0,0,.5);transition:.2s;overflow:visible}
+  box-shadow:0 8px 26px rgba(0,0,0,.5);transition:.2s;overflow:visible;animation:rise .3s}
 #vicbtn canvas{width:100%;height:100%;border-radius:50%;display:block}
 #vicbtn span{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);background:var(--coral);font-size:11px;font-weight:700;
   padding:2px 10px;border-radius:999px;letter-spacing:.08em;text-transform:uppercase}
 #vicbtn:hover{transform:scale(1.06);border-color:var(--teal)}
 #vicbubble{pointer-events:auto;max-width:min(420px,60vw);background:#fbfaf7;color:#1b2130;border-radius:18px 18px 4px 18px;padding:14px 18px 12px;
   box-shadow:0 12px 40px rgba(0,0,0,.5);margin-bottom:26px;animation:rise .3s}
+#vic.tv{left:0;right:0;bottom:112px;justify-content:center}
+#vic.tv #vicbubble{width:min(620px,88vw);max-width:none;border-radius:18px;margin-bottom:0}
 @keyframes rise{from{transform:translateY(12px);opacity:0}}
 .vicname{font-weight:700;color:var(--coral);font-size:14px;margin-bottom:4px}.vicname span{color:#7b8496;font-weight:400}
 #victext{font-size:15.5px;line-height:1.45}
-#vicbtns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+#vicbtns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:flex-end}
 #vicbtns button{border:none;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;background:#e9ebf0;color:#1b2130}
 #vicbtns button.pri{background:var(--coral);color:#fff} #vicbtns button:hover{filter:brightness(1.08)}
 
