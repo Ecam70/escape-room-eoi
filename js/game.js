@@ -381,7 +381,7 @@
     $('back').classList.add('on'); $('clockctrl').classList.toggle('hidden', !(z === 'clock' && !S.solved.clock));
     flyTo(c.pos, c.look, null, () => {
       zoneCamCur = c;
-      if (z === 'tv' && S.zone === 'tv') { if (S.flags.hello) vicMenu(); else { S.flags.hello = 1; vicSay('¡Hola! Soy Vicenta, la Directora del Programa. El sistema ha bloqueado la puerta, pero tranquilidad: todo lo que necesitas lo vimos en los talleres. Mira bien a tu alrededor y, si te atascas, vuelve a esta pantalla y pídeme una pista.', [['¡Vamos allá!', vicBye, 1]], true); } }
+      if (z === 'tv' && S.zone === 'tv') { if (S.flags.hello) vicMenu(); else { S.flags.hello = 1; vicSay('¡Hola! Soy Vicenta, la Mentora Residente. El sistema ha bloqueado la puerta, pero tranquilidad: todo lo que necesitas lo vimos en los talleres. Mira bien a tu alrededor y, si te atascas, vuelve a esta pantalla y pídeme una pista.', [['¡Vamos allá!', vicBye, 1]], true); } }
       if (z === 'lego' && has('brick')) { drop('brick'); R.bricks.blue.g.visible = true; sfx.pick(); say('Dejas la pieza azul sobre la mesa, con las demás.'); }
       if (z === 'board' && S.solved.canvas && S.uv) S.flags.codeSeen = 1;
     });
